@@ -10,11 +10,12 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 
 	"github.com/satori/go.uuid"
+	"github.com/serverless-crud-go/src/package/database"
+	"log"
 )
 
 type Todo struct {
@@ -24,19 +25,16 @@ type Todo struct {
 	CreatedAt   string 	`json:"created_at"`
 }
 
-var ddb *dynamodb.DynamoDB
-func init() {
-	region := os.Getenv("AWS_REGION")
-	if session, err := session.NewSession(&aws.Config{ // Use aws sdk to connect to dynamoDB
-		Region: &region,
-	}); err != nil {
-		fmt.Println(fmt.Sprintf("Failed to connect to AWS: %s", err.Error()))
-	} else {
-		ddb = dynamodb.New(session) // Create DynamoDB client
-	}
-}
+
+// TODO - move code dealing with Database interaction to repository
 
 func AddTodo(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+
+	ddb, err := database.ConnectionToDatabase(os.Getenv("AWS_REGION"))
+	if err != nil {
+		log.Panic(err)
+	}
+
 	fmt.Println("AddTodo")
 
 	var (
@@ -75,5 +73,6 @@ func AddTodo(ctx context.Context, request events.APIGatewayProxyRequest) (events
 }
 
 func main() {
+
 	lambda.Start(AddTodo)
 }
